@@ -1,0 +1,302 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>OP Ticket</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+
+  <style>
+    body { background-color: #f8f9fa; }
+    .op-header { background-color: #2793f2ff; color: white; padding: 10px; font-weight: bold; }
+    .form-section { background: white; padding: 20px; border-radius: 10px; margin-top: 20px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); }
+    .btn-print { background-color: #2793f2ff; color: white; }
+    textarea { resize: none; }
+    .table input { border: none; width: 100%; text-align: center; }
+    .select2-container--default .select2-selection--single {
+      height: 38px;
+      padding: 6px 12px;
+      font-size: 16px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container mt-4">
+  <div class="op-header d-flex justify-content-between align-items-center">
+    <span>OP Ticket</span>
+    <button class="btn btn-sm btn-light">X</button>
+  </div>
+
+  <form method="POST">
+    {% csrf_token %}
+    <div class="form-section">
+
+      <!-- Patient Info -->
+      <div class="row mb-3">
+        <div class="col-md-2">
+          <label>OP No.</label>
+          <input type="text" name="op_no" class="form-control" value="{{ form.op_no.value|default:'' }}" autofocus>
+        </div>
+        <div class="col-md-2">
+          <label>OP Date</label>
+          <input type="date" name="op_date" class="form-control" value="{{ form.op_date.value|default:'' }}">
+        </div>
+        <div class="col-md-2">
+          <label>Patient ID</label>
+          <input type="text" name="patient_id" class="form-control" value="{{ form.patient_id.value|default:'' }}">
+        </div>
+        <div class="col-md-2">
+          <label>Doctor Name</label>
+          <select name="doctor" class="form-control doctor-select">
+            <option value="">Select Doctor</option>
+            {% for doctor in doctors %}
+              <option value="{{ doctor.id }}" {% if doctor.id|stringformat:"s" == form.doctor.value|stringformat:"s" %}selected{% endif %}>
+                {{ doctor.name }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-2">
+          <label>Token No.</label>
+          <input type="text" name="token_no" class="form-control" value="{{ form.token_no.value|default:'' }}">
+        </div>
+        <div class="col-md-2">
+          <label>Appointment Details</label>
+          <input type="text" name="appointment_details" class="form-control" value="{{ form.appointment_details.value|default:'' }}">
+        </div>
+      </div>
+
+      <div class="row mb-3">
+        <div class="col-md-3">
+          <label>Name</label>
+          <input type="text" name="name" class="form-control" value="{{ form.name.value|default:'' }}">
+        </div>
+        <div class="col-md-1">
+          <label>Age</label>
+          <input type="number" name="age" class="form-control" value="{{ form.age.value|default:'' }}">
+        </div>
+        <div class="col-md-2">
+          <label>Sex</label>
+          <select name="gender" class="form-control">
+            <option value="Male" {% if form.gender.value == "Male" %}selected{% endif %}>Male</option>
+            <option value="Female" {% if form.gender.value == "Female" %}selected{% endif %}>Female</option>
+            <option value="Other" {% if form.gender.value == "Other" %}selected{% endif %}>Other</option>
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label>Place</label>
+          <input type="text" name="place" class="form-control" value="{{ form.place.value|default:'' }}">
+        </div>
+        <div class="col-md-3">
+          <label>Phone</label>
+          <input type="text" name="phone" class="form-control" value="{{ form.phone.value|default:'' }}">
+        </div>
+      </div>
+
+      <div class="row mb-4">
+        <div class="col-md-12">
+          <label>Notes</label>
+          <textarea name="notes" class="form-control" rows="2">{{ form.notes.value|default:'' }}</textarea>
+        </div>
+      </div>
+
+      <!-- Description Table -->
+      <div class="table-responsive mb-4">
+        <table class="table table-bordered align-middle text-center" id="servicesTable">
+          <thead class="table-light">
+            <tr><th>#</th><th>Description</th><th>Qty</th><th>Rate</th><th>Amount</th><th>Tax</th><th>Action</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>1</td>
+              <td>
+                <select name="description" class="form-control select2" multiple="multiple" style="display:none;" required>
+                  <option value="">Select description</option>
+                  {% for desc in description %}
+                    <option value="{{ desc.id }}" {% if desc.id|stringformat:"s" == form.description.value|stringformat:"s" %}selected{% endif %}>
+                      {{ desc.name }}
+                    </option>
+                  {% endfor %}
+                </select>
+                <ul class="selected-descriptions list-unstyled mb-0"></ul>
+              </td>
+              <td><input type="number" name="qty" class="form-control qty" min="1" value="{{ form.qty.value|default:1 }}"></td>
+              <td><input type="number" name="rate" class="form-control rate" step="0.01" value="{{ form.rate.value|default:0 }}"></td>
+              <td><input type="number" name="amount" class="form-control amount" readonly></td>
+              <td><input type="text" name="tax" class="form-control" value="{{ form.tax.value|default:0 }}" readonly></td>
+              <td><button type="button" class="btn btn-sm btn-danger deleteRow">🗑</button></td>
+            </tr>
+            <tr>
+              <td>2</td>
+              <td>
+                <select name="description" class="form-control select2" multiple="multiple" style="display:none;" required>
+                  <option value="">Select description</option>
+                  {% for desc in description %}
+                    <option value="{{ desc.id }}" {% if desc.id|stringformat:"s" == form.description.value|stringformat:"s" %}selected{% endif %}>
+                      {{ desc.name }}
+                    </option>
+                  {% endfor %}
+                </select>
+                <ul class="selected-descriptions list-unstyled mb-0"></ul>
+              </td>
+              <td><input type="number" name="qty" class="form-control qty" min="1" value="{{ form.qty.value|default:1 }}"></td>
+              <td><input type="number" name="rate" class="form-control rate" step="0.01" value="{{ form.rate.value|default:0 }}"></td>
+              <td><input type="number" name="amount" class="form-control amount" readonly></td>
+              <td><input type="text" name="tax" class="form-control" value="{{ form.tax.value|default:0 }}" readonly></td>
+              <td><button type="button" class="btn btn-sm btn-danger deleteRow">🗑</button></td>
+            </tr>
+            <tr>
+              <td>3</td>
+              <td>
+                <select name="description" class="form-control select2" multiple="multiple" style="display:none;" required>
+                  <option value="">Select description</option>
+                  {% for desc in description %}
+                    <option value="{{ desc.id }}" {% if desc.id|stringformat:"s" == form.description.value|stringformat:"s" %}selected{% endif %}>
+                      {{ desc.name }}
+                    </option>
+                  {% endfor %}
+                </select>
+                <ul class="selected-descriptions list-unstyled mb-0"></ul>
+              </td>
+              <td><input type="number" name="qty" class="form-control qty" min="1" value="{{ form.qty.value|default:1 }}"></td>
+              <td><input type="number" name="rate" class="form-control rate" step="0.01" value="{{ form.rate.value|default:0 }}"></td>
+              <td><input type="number" name="amount" class="form-control amount" readonly></td>
+              <td><input type="text" name="tax" class="form-control" value="{{ form.tax.value|default:0 }}" readonly></td>
+              <td><button type="button" class="btn btn-sm btn-danger deleteRow">🗑</button></td>
+            </tr>
+            <tr>
+              <td>4</td>
+              <td>
+                <select name="description" class="form-control select2" multiple="multiple" style="display:none;" required>
+                  <option value="">Select description</option>
+                  {% for desc in description %}
+                    <option value="{{ desc.id }}" {% if desc.id|stringformat:"s" == form.description.value|stringformat:"s" %}selected{% endif %}>
+                      {{ desc.name }}
+                    </option>
+                  {% endfor %}
+                </select>
+                <ul class="selected-descriptions list-unstyled mb-0"></ul>
+              </td>
+              <td><input type="number" name="qty" class="form-control qty" min="1" value="{{ form.qty.value|default:1 }}"></td>
+              <td><input type="number" name="rate" class="form-control rate" step="0.01" value="{{ form.rate.value|default:0 }}"></td>
+              <td><input type="number" name="amount" class="form-control amount" readonly></td>
+              <td><input type="text" name="tax" class="form-control" value="{{ form.tax.value|default:0 }}" readonly></td>
+              <td><button type="button" class="btn btn-sm btn-danger deleteRow">🗑</button></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Payment -->
+      <div class="row mb-3">
+        <div class="col-md-3">
+          <label>Payment Mode</label>
+          <select name="payment_mode" class="form-control">
+            <option value="Cash" {% if form.payment_mode.value == "Cash" %}selected{% endif %}>Cash</option>
+            <option value="Card" {% if form.payment_mode.value == "Card" %}selected{% endif %}>Card</option>
+            <option value="UPI" {% if form.payment_mode.value == "UPI" %}selected{% endif %}>UPI</option>
+            <option value="Online" {% if form.payment_mode.value == "Online" %}selected{% endif %}>Online</option>
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label>Received Amount</label>
+          <input type="number" name="received_amount" id="received" class="form-control" value="{{ form.received_amount.value|default:0 }}">
+        </div>
+        <div class="col-md-3">
+          <label>Balance Amount</label>
+          <input type="number" name="balance_amount" id="balance" class="form-control" readonly>
+        </div>
+        <div class="col-md-3">
+          <label>Sub Total</label>
+          <input type="number" id="subtotal" class="form-control" readonly>
+        </div>
+      </div>
+
+      <div class="row mb-4">
+        <div class="col-md-3">
+          <label>Discount</label>
+          <input type="number" name="discount" id="discount" class="form-control" value="{{ form.discount.value|default:0 }}">
+        </div>
+        <div class="col-md-3">
+          <label>Total Amount</label>
+          <input type="number" name="total_amount" id="total" class="form-control" value="{{ form.total_amount.value|default:0 }}" readonly>
+        </div>
+      </div>
+
+      <!-- Buttons -->
+      
+      <div class="text-end mt-4">
+        <button type="submit" class="btn btn-success">Save</button>
+        <button type="button" class="btn btn-warning" onclick="window.print();">Print OP</button>
+        <button type="button" class="btn btn-print" onclick="window.print();">Print Bill</button>
+        <button type="button" class="btn btn-danger" onclick="window.location.href='/'">Exit</button>
+      </div>
+    </div>
+  </form>
+</div>
+
+<!-- Scripts -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script>
+  function calculateAmounts() {
+    let subtotal = 0;
+    document.querySelectorAll("#servicesTable tbody tr").forEach((row) => {
+      const qty = parseFloat(row.querySelector(".qty").value) || 0;
+      const rate = parseFloat(row.querySelector(".rate").value) || 0;
+      const amount = qty * rate;
+      row.querySelector(".amount").value = amount.toFixed(2);
+      subtotal += amount;
+    });
+
+    document.getElementById("subtotal").value = subtotal.toFixed(2);
+
+    const discount = parseFloat(document.getElementById("discount").value) || 0;
+    const total = subtotal - discount;
+    document.getElementById("total").value = total.toFixed(2);
+
+    const received = parseFloat(document.getElementById("received").value) || 0;
+    const balance = received - total;
+    document.getElementById("balance").value = balance.toFixed(2);
+  }
+
+  document.addEventListener("input", (e) => {
+    if (e.target.classList.contains("qty") || e.target.classList.contains("rate") || e.target.id === "discount" || e.target.id === "received") {
+      calculateAmounts();
+    }
+  });
+
+  calculateAmounts();
+
+  document.querySelector("#servicesTable").addEventListener("click", function(e) {
+    if (e.target.classList.contains("deleteRow")) {
+      const row = e.target.closest("tr");
+      row.remove();
+      calculateAmounts();
+    }
+  });
+
+  $(document).ready(function () {
+    $('.select2').select2({ placeholder: "Select description...", allowClear: true, width: '100%' });
+    $('.doctor-select').select2({ placeholder: "Select a doctor...", allowClear: true, width: '100%' });
+    // Display selected items in list format
+    $('.description-select').on('change', function () {
+      const selectedOptions = $(this).val() || [];
+      const ul = $(this).siblings('.selected-descriptions');
+      ul.empty();
+      selectedOptions.forEach(item => {
+        ul.append(`<li>• ${item}</li>`);
+      });
+    });
+
+    // Trigger display on page load
+    $('.description-select').trigger('change');
+  });
+
+  
+
+</script>
+</body>
+</html>
